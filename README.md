@@ -144,13 +144,6 @@ fastboot flash boot patched_kernel.img   # if needed
 
 ---
 
-## Known Issues & Troubleshooting
-
-- **Kernel panic on boot** – you haven’t applied the kernel bypass correctly. Double‑check the patch.
-- **ADB not recognised** – verify USB configuration in the device tree (the logs show some USB related `denied` entries; they are usually harmless).
-- **Firmware loading failures** (`aw87xxx_acf.bin`, `gx8002_mcu_mor.bin`) – these are audio / sensor firmware files. They are not critical for TWRP operation; the warnings can be ignored.
-
----
 
 ## Credits
 
