@@ -1,5 +1,3 @@
----
-
 ```markdown
 # TWRP Device Tree for BBK A2 (P22H190) – Unisoc UMS512
 
