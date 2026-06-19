@@ -1,45 +1,61 @@
-/spl                   emmc     /dev/block/mmcblk0boot0                  flags=display=spl
-/spl_bk                emmc     /dev/block/mmcblk0boot1                  flags=display=spl_bk
-/uboot                 emmc     /dev/block/by-name/uboot                 flags=display=uboot
-/uboot_bak             emmc     /dev/block/by-name/uboot_bak             flags=display=uboot_bak
-/sml                   emmc     /dev/block/by-name/sml                   flags=display=sml
-/sml_bak               emmc     /dev/block/by-name/sml_bak               flags=display=sml_bak
-/tos                   emmc     /dev/block/by-name/trustos               flags=display=tos
-/tos_bak               emmc     /dev/block/by-name/trustos_bak           flags=display=tos_bak
-/teecfg                emmc     /dev/block/by-name/teecfg                flags=display=teecfg
-/teecfg_bak            emmc     /dev/block/by-name/teecfg_bak            flags=display=teecfg_bak
-/vbmeta                emmc     /dev/block/by-name/vbmeta                flags=display=vbmeta
-/vbmeta_bak            emmc     /dev/block/by-name/vbmeta_bak            flags=display=vbmeta_bak
-/vbmeta_system         emmc     /dev/block/by-name/vbmeta_system         flags=display=vbmeta_system
-/vbmeta_vendor         emmc     /dev/block/by-name/vbmeta_vendor         flags=display=vbmeta_vendor
-/vbmeta_product        emmc     /dev/block/by-name/vbmeta_product        flags=display=vbmeta_product
-/vbmeta_system_ext     emmc     /dev/block/by-name/vbmeta_system_ext     flags=display=vbmeta_system_ext
-/dtbo                  emmc     /dev/block/by-name/dtbo                  flags=display=dtbo
-/ltedsp                emmc     /dev/block/by-name/l_ldsp                flags=display=ltedsp
-/ltegdsp               emmc     /dev/block/by-name/l_gdsp                flags=display=ltegdsp
-/lteagdsp              emmc     /dev/block/by-name/l_agdsp               flags=display=lteagdsp
-/ltecdsp               emmc     /dev/block/by-name/l_cdsp                flags=display=ltecdsp
-/ltemodem              emmc     /dev/block/by-name/l_modem               flags=display=ltemodem
-/ltefixnv1             emmc     /dev/block/by-name/l_fixnv1              flags=display=ltefixnv1
-/ltefixnv2             emmc     /dev/block/by-name/l_fixnv2              flags=display=ltefixnv2
-/ltedeltanv            emmc     /dev/block/by-name/l_deltanv             flags=display=ltedeltanv
-/wcnmodem              emmc     /dev/block/by-name/wcnmodem              flags=display=wcnmodem
-/gnssmodem             emmc     /dev/block/by-name/gnssmodem             flags=display=gnssmodem
-/pmsys                 emmc     /dev/block/by-name/pm_sys                flags=display=pmsys
-/misc                  emmc     /dev/block/by-name/misc                  flags=display=misc
-/boot                  emmc     /dev/block/by-name/boot                  flags=display=boot
-/recovery              emmc     /dev/block/by-name/recovery              flags=display=recovery
-/persist               emmc     /dev/block/by-name/persist               flags=display=persist
-/logo                  emmc     /dev/block/by-name/logo                  flags=display=logo
-/fbootlogo             emmc     /dev/block/by-name/fbootlogo             flags=display=fbootlogo
-/system                ext4     system                                   flags=display=system;logical
-/system_ext            ext4     system_ext                               flags=display=system_ext;logical
-/vendor                ext4     vendor                                   flags=display=vendor;logical
-/product               ext4     product                                  flags=display=product;logical
-/metadata              ext4     /dev/block/by-name/metadata              flags=display=metadata
-/socko                 ext4     /dev/block/by-name/socko                 flags=display=socko
-/odmko                 ext4     /dev/block/by-name/odmko                 flags=display=odmko
-/cache                 ext4     /dev/block/by-name/cache                 flags=display=cache
-/data                  f2fs     /dev/block/by-name/userdata              flags=display=data
-/mnt/vendor            ext4     /dev/block/by-name/prodnv                flags=display=vendor
-/storage/sdcard0       vfat     /dev/block/mmcblk1p1                     flags=display=sdcard0
+# TWRP fstab file.
+# The filesystem that contains the filesystem checker binary (typically /system) cannot
+# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+
+# mount point    fstype     device                 device2                        flags
+
+# Bootloader, security, and verified boot partitions
+/spl                  emmc       /dev/block/mmcblk0boot0                  flags=wait;backup=1;display="SPL"
+/spl_bk               emmc       /dev/block/mmcblk0boot1                  flags=wait;backup=1;display="SPL Backup"
+/uboot                emmc       /dev/block/by-name/uboot                 flags=wait;backup=1;display="UBoot"
+/uboot_bak            emmc       /dev/block/by-name/uboot_bak             flags=wait;backup=1;display="UBoot Backup"
+/sml                  emmc       /dev/block/by-name/sml                   flags=wait;backup=1;display="SML"
+/sml_bak              emmc       /dev/block/by-name/sml_bak               flags=wait;backup=1;display="SML Backup"
+/tos                  emmc       /dev/block/by-name/trustos               flags=wait;backup=1;display="TOS"
+/tos_bak              emmc       /dev/block/by-name/trustos_bak           flags=wait;backup=1;display="TOS Backup"
+/teecfg               emmc       /dev/block/by-name/teecfg                flags=wait;backup=1;display="TEE Config"
+/teecfg_bak           emmc       /dev/block/by-name/teecfg_bak            flags=wait;backup=1;display="TEE Config Backup"
+/vbmeta               emmc       /dev/block/by-name/vbmeta                flags=wait;backup=1;flashimg=1;display="VBMeta"
+/vbmeta_bak           emmc       /dev/block/by-name/vbmeta_bak            flags=wait;backup=1;display="VBMeta Backup"
+/vbmeta_system        emmc       /dev/block/by-name/vbmeta_system         flags=wait;backup=1;display="VBMeta System"
+/vbmeta_vendor        emmc       /dev/block/by-name/vbmeta_vendor         flags=wait;backup=1;display="VBMeta Vendor"
+/vbmeta_product       emmc       /dev/block/by-name/vbmeta_product        flags=wait;backup=1;display="VBMeta Product"
+/vbmeta_system_ext    emmc       /dev/block/by-name/vbmeta_system_ext     flags=wait;backup=1;display="VBMeta SystemExt"
+/dtbo                 emmc       /dev/block/by-name/dtbo                  flags=wait;backup=1;display="DTBO"
+
+# Modem, DSP, and radio firmware partitions
+/ltedsp               emmc       /dev/block/by-name/l_ldsp                flags=wait;backup=1;display="LTE DSP"
+/ltegdsp              emmc       /dev/block/by-name/l_gdsp                flags=wait;backup=1;display="LTE GDSP"
+/lteagdsp             emmc       /dev/block/by-name/l_agdsp               flags=wait;backup=1;display="LTE AGDSP"
+/ltecdsp              emmc       /dev/block/by-name/l_cdsp                flags=wait;backup=1;display="LTE CDSP"
+/ltemodem             emmc       /dev/block/by-name/l_modem               flags=wait;backup=1;display="LTE Modem"
+/ltefixnv1            emmc       /dev/block/by-name/l_fixnv1              flags=wait;backup=1;display="LTE FixNV1"
+/ltefixnv2            emmc       /dev/block/by-name/l_fixnv2              flags=wait;backup=1;display="LTE FixNV2"
+/ltedeltanv           emmc       /dev/block/by-name/l_deltanv             flags=wait;backup=1;display="LTE DeltaNV"
+/wcnmodem             emmc       /dev/block/by-name/wcnmodem              flags=wait;backup=1;display="WCN Modem"
+/gnssmodem            emmc       /dev/block/by-name/gnssmodem             flags=wait;backup=1;display="GNSS Modem"
+/pmsys                emmc       /dev/block/by-name/pm_sys                flags=wait;backup=1;display="PM Sys"
+
+# Misc, boot, recovery, persist, and logo partitions
+/misc                 emmc       /dev/block/by-name/misc                  flags=wait;backup=1;display="Misc"
+/boot                 emmc       /dev/block/by-name/boot                  flags=wait;backup=1;flashimg=1;display="Boot"
+/recovery             emmc       /dev/block/by-name/recovery              flags=wait;backup=1;flashimg=1;display="Recovery"
+/persist              emmc       /dev/block/by-name/persist               flags=wait;backup=1;display="Persist"
+/logo                 emmc       /dev/block/by-name/logo                  flags=wait;backup=1;display="Logo"
+/fbootlogo            emmc       /dev/block/by-name/fbootlogo             flags=wait;backup=1;display="FBootLogo"
+
+# System logical partitions (AVB-protected) and metadata
+/system               ext4       system                                   flags=wait;logical;display="System"
+/system_ext           ext4       system_ext                               flags=wait;logical;display="SystemExt"
+/vendor               ext4       vendor                                   flags=wait;logical;display="Vendor"
+/product              ext4       product                                  flags=wait;logical;display="Product"
+/metadata             ext4       /dev/block/by-name/metadata              flags=wait;logical;formattable;display="Metadata"
+
+# Data, cache, and vendor-specific partitions
+/socko                ext4       /dev/block/by-name/socko                 flags=wait;check;backup=1;display="Socko"
+/odmko                ext4       /dev/block/by-name/odmko                 flags=wait;check;backup=1;display="Odmko"
+/cache                ext4       /dev/block/by-name/cache                 flags=wait;check;backup=1;display="Cache"
+/data                 f2fs       /dev/block/by-name/userdata              flags=display="Data"
+
+# External SD card
+/sdcard0              vfat       /dev/block/mmcblk1p1                    flags=wait;storage;display="MicroSD"
