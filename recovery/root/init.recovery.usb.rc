@@ -1,78 +1,109 @@
+# =========================================================
+# SPRD / UMS512 RECOVERY USB CONFIGFS (STABLE VERSION)
+# =========================================================
+
 on init
-    # USB default state in recovery
+    # mount configfs early
+    mount configfs none /config
+
+    # default state
     setprop sys.usb.config none
     setprop sys.usb.state none
-    setprop sys.usb.configfs 0
 
-    # ensure adbd exists
+    # start adbd early (recovery safe)
     start adbd
 
-# =========================
-# ADB ONLY MODE (primary for recovery)
-# =========================
-on property:sys.usb.config=adb
-    write /sys/class/android_usb/android0/enable 0
-    write /sys/class/android_usb/android0/idVendor 0x1782
-    write /sys/class/android_usb/android0/idProduct 0x4D00
 
-    write /sys/class/android_usb/android0/functions adb
-    write /sys/class/android_usb/android0/iManufacturer Unisoc
-    write /sys/class/android_usb/android0/iProduct UMS512 Recovery
-    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+# =========================================================
+# WAIT UDC (CRITICAL)
+# =========================================================
+on boot
+    wait /sys/class/udc/
 
-    write /sys/class/android_usb/android0/enable 1
-
-    start adbd
-    setprop sys.usb.state adb
+    # DO NOT bind here blindly, wait usb mode trigger
+    setprop sys.usb.ready 1
 
 
-# =========================
-# NONE / OFF
-# =========================
-on property:sys.usb.config=none
-    stop adbd
-    write /sys/class/android_usb/android0/enable 0
-    setprop sys.usb.state none
-
-
-# =========================
-# SIDELOAD (ADB sideload)
-# =========================
-on property:sys.usb.config=sideload
-    write /sys/class/android_usb/android0/enable 0
-
-    write /sys/class/android_usb/android0/idVendor 0x1782
-    write /sys/class/android_usb/android0/idProduct 0x4D01
-    write /sys/class/android_usb/android0/functions adb
-
-    write /sys/class/android_usb/android0/enable 1
-
-    start adbd
-    setprop sys.usb.state sideload
-
-
-# =========================
-# FALLBACK: configfs (for some UMS512 new kernels)
-# =========================
-on fs && property:sys.usb.configfs=1
-    mkdir /config/usb_gadget/g1 0770 shell shell
+# =========================================================
+# CREATE GADGET BASE
+# =========================================================
+on fs
+    mkdir /config/usb_gadget/g1
 
     write /config/usb_gadget/g1/idVendor 0x1782
+    write /config/usb_gadget/g1/idProduct 0x4D00
 
     mkdir /config/usb_gadget/g1/strings/0x409
+    write /config/usb_gadget/g1/strings/0x409/manufacturer "Unisoc"
+    write /config/usb_gadget/g1/strings/0x409/product "UMS512 Recovery"
     write /config/usb_gadget/g1/strings/0x409/serialnumber ${ro.serialno}
-    write /config/usb_gadget/g1/strings/0x409/manufacturer Unisoc
-    write /config/usb_gadget/g1/strings/0x409/product UMS512 Recovery
+
+
+# =========================================================
+# ADB FUNCTION (PRIMARY MODE)
+# =========================================================
+on property:sys.usb.config=adb
 
     mkdir /config/usb_gadget/g1/functions/ffs.adb
+
     mkdir /config/usb_gadget/g1/configs/b.1
     mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409
     write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "adb"
 
     symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f1
 
-on property:sys.usb.config=adb && property:sys.usb.configfs=1
-    write /config/usb_gadget/g1/idProduct 0x4D00
-    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
+    # bind UDC (ONLY HERE)
+    write /config/usb_gadget/g1/UDC musb-hdrc
+
     start adbd
     setprop sys.usb.state adb
+
+
+# =========================================================
+# SIDELOAD MODE (ADB)
+# =========================================================
+on property:sys.usb.config=sideload
+
+    mkdir /config/usb_gadget/g1/functions/ffs.adb
+
+    mkdir /config/usb_gadget/g1/configs/b.1
+    mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "sideload"
+
+    symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f1
+
+    write /config/usb_gadget/g1/UDC musb-hdrc
+
+    start adbd
+    setprop sys.usb.state sideload
+
+
+# =========================================================
+# FASTBOOTD MODE (userspace fastboot)
+# =========================================================
+on property:sys.usb.config=fastboot
+
+    # change USB identity to fastboot
+    write /config/usb_gadget/g1/idVendor 0x18d1
+    write /config/usb_gadget/g1/idProduct 0x4EE0
+
+    mkdir /config/usb_gadget/g1/configs/b.1
+    mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "fastboot"
+
+    write /config/usb_gadget/g1/UDC musb-hdrc
+
+    setprop sys.usb.state fastboot
+
+
+# =========================================================
+# USB OFF
+# =========================================================
+on property:sys.usb.config=none
+
+    stop adbd
+
+    # unbind safely
+    write /config/usb_gadget/g1/UDC ""
+
+    setprop sys.usb.state none
