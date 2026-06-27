@@ -2,22 +2,6 @@
 ## Please include it in /init.recovery.${ro.hardware}.rc
 #
 
-service healthd /system/bin/healthd -r
-    critical
-    seclabel u:r:healthd:s0
-
-service modem_ctl-cali /vendor/bin/modem_control
-    class cali
-    user root
-    group system radio shell
-    oneshot
-
-service modem_ctl-ft /vendor/bin/modem_control
-    class factorytest
-    user root
-    group system radio shell
-    oneshot
-
 service logd-cali /system/bin/logd
     class cali
     socket logd stream 0666 logd logd
@@ -28,27 +12,6 @@ service logd-cali /system/bin/logd
     user logd
     seclabel u:r:logd:s0
 
-service vendor.wpa_supplicant /vendor/bin/hw/wpa_supplicant \
-    -Dnl80211 -iwlan0 -c/data/vendor/wifi/wpa/wpa_supplicant.conf \
-    -e/data/vendor/wifi/entropy.bin -g@android:wpa_wlan0 -dd
-    group system wifi inet keystore
-    socket wpa_wlan0 dgram 660 wifi wifi
-    disabled
-    oneshot
-
-service wcnd-cali /vendor/bin/connmgr -R
-    class cali
-    user root
-    group root system shell wifi inet bluetooth
-    seclabel u:r:wcnd:s0
-
-service wcnd_eng-cali /vendor/bin/connmgr -G
-    class cali
-    user root
-    group root system shell wifi inet bluetooth
-    disabled
-    oneshot
-    seclabel u:r:wcnd:s0
 
 service console-cali /system/bin/sh
     console
@@ -57,20 +20,7 @@ service console-cali /system/bin/sh
     group root
     seclabel u:r:shell:s0
 
-service vendor.mlogservice /vendor/bin/mlogservice
-    class main
-    user shell
-    group system root
 
-service engpcclient /vendor/bin/engpc
-    class cali
-    user root
-    group root sdcard_rw system radio shell net_bt_admin input audio
-
-service gpsd /vendor/bin/gpsd
-    class core
-    user system
-    group gps system shell inet net_raw wifi
 
 on init
     # Apply strict SELinux checking of PROT_EXEC on mmap/mprotect calls.
@@ -215,23 +165,6 @@ on post-fs-data
     chmod 666 /sys/module/firmware_class/parameters/path
     chmod 666 /sys/module/shub_core/parameters/sensor_fusion_mode
 
-    #add wifi
-    mkdir /data/vendor/wifi 0770 wifi wifi
-    mkdir /data/vendor/wifi/wpa 0770 wifi wifi
-    mkdir /data/vendor/wifi/wpa/sockets 0770 wifi wifi
-    mkdir /data/system 0770 system system
-    mkdir /etc/wifi 0770 wifi wifi
-    write /data/vendor/wifi/fwpath sta_mode
-    chmod 660 /data/vendor/wifi/fwpath
-    chown wifi wifi /data/vendor/wifi/fwpath
-    rmdir /data/system/wpa_supplicant
-    mkdir /data/misc/dhcp 0770 dhcp dhcp
-
-    #to observe dnsmasq.leases file for dhcp information
-    chown dhcp system /data/misc/dhcp
-    setprop wifi.interface wlan0
-    mkdir /data/misc/dhcp6c 0770 dhcp dhcp
-    chown dhcp system /data/misc/dhcp6c
 
     # Ylog dir on /data partition
     mkdir /data/vendor 0751 root root
@@ -358,9 +291,7 @@ on property:ro.bootmode=cali
     chmod 666 /data/vendor/gnss/FlashCfg.cg
 
     start hwservicemanager
-    start vendor.slogmodem
-    start vendor.cp_diskserver
-    start vendor.mlogservice
+
 
 on property:ro.bootmode=factorytest
     setprop sys.usb.config adb,vser,gser
@@ -439,7 +370,7 @@ on property:ro.bootmode=factorytest
     start vendor.cp_diskserver
     start vendor.slogmodem
     start vendor.mlogservice
-    trigger factorytest
+
 
 on property:ro.bootmode=factorytest && property:ro.debuggable=0
     setprop sys.usb.config vser

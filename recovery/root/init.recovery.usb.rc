@@ -1,109 +1,142 @@
 # =========================================================
-# SPRD / UMS512 RECOVERY USB CONFIGFS (STABLE VERSION)
+# TWRP USB CONFIGFS FULL STABLE (ADB / MTP / SIDELoad / FASTBOOTD)
+# Fix: FUNCTIONFS timeout + 5s disconnect loop (Unisoc/Qcom fix style)
 # =========================================================
 
+
+# =========================================================
+# 0. GLOBAL INIT
+# =========================================================
 on init
-    # mount configfs early
+    setprop sys.usb.udc none
+
     mount configfs none /config
 
-    # default state
-    setprop sys.usb.config none
-    setprop sys.usb.state none
-
-    # start adbd early (recovery safe)
-    start adbd
-
 
 # =========================================================
-# WAIT UDC (CRITICAL)
+# 1. CREATE GADGET BASE
 # =========================================================
-on boot
-    wait /sys/class/udc/
+on init
+    mkdir /config/usb_gadget/g1 0770 root root
 
-    # DO NOT bind here blindly, wait usb mode trigger
-    setprop sys.usb.ready 1
-
-
-# =========================================================
-# CREATE GADGET BASE
-# =========================================================
-on fs
-    mkdir /config/usb_gadget/g1
-
-    write /config/usb_gadget/g1/idVendor 0x1782
-    write /config/usb_gadget/g1/idProduct 0x4D00
+    write /config/usb_gadget/g1/idVendor 0x18D1
+    write /config/usb_gadget/g1/idProduct 0x4EE7
 
     mkdir /config/usb_gadget/g1/strings/0x409
-    write /config/usb_gadget/g1/strings/0x409/manufacturer "Unisoc"
-    write /config/usb_gadget/g1/strings/0x409/product "UMS512 Recovery"
-    write /config/usb_gadget/g1/strings/0x409/serialnumber ${ro.serialno}
+    write /config/usb_gadget/g1/strings/0x409/manufacturer "TWRP"
+    write /config/usb_gadget/g1/strings/0x409/product "TWRP Recovery"
+    write /config/usb_gadget/g1/strings/0x409/serialnumber "0001"
+
+    mkdir /config/usb_gadget/g1/configs/b.1
+    mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "ADB/MTP"
+    write /config/usb_gadget/g1/configs/b.1/MaxPower 120
 
 
 # =========================================================
-# ADB FUNCTION (PRIMARY MODE)
+# 2. FUNCTIONS (ADB + MTP)
+# =========================================================
+on init
+    mkdir /config/usb_gadget/g1/functions/ffs.adb
+    mkdir /config/usb_gadget/g1/functions/mtp.gs0
+
+    mkdir /dev/usb-ffs/adb 0770 shell shell
+    mount functionfs adb /dev/usb-ffs/adb
+
+
+# =========================================================
+# 3. CLEAN HELPER (SAFE RESET)
+# =========================================================
+on property:sys.usb.reset=1
+    write /config/usb_gadget/g1/UDC ""
+
+    rm /config/usb_gadget/g1/configs/b.1/f1 || true
+    rm /config/usb_gadget/g1/configs/b.1/f2 || true
+
+    setprop sys.usb.ffs.ready 0
+
+
+# =========================================================
+# 4. ADB MODE (FIXED)
 # =========================================================
 on property:sys.usb.config=adb
 
-    mkdir /config/usb_gadget/g1/functions/ffs.adb
+    write /config/usb_gadget/g1/UDC ""
 
-    mkdir /config/usb_gadget/g1/configs/b.1
-    mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409
-    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "adb"
+    rm /config/usb_gadget/g1/configs/b.1/f1 || true
+    rm /config/usb_gadget/g1/configs/b.1/f2 || true
 
     symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f1
 
-    # bind UDC (ONLY HERE)
-    write /config/usb_gadget/g1/UDC musb-hdrc
-
-    start adbd
-    setprop sys.usb.state adb
+    setprop sys.usb.ffs.ready 1
 
 
 # =========================================================
-# SIDELOAD MODE (ADB)
+# 5. MTP MODE
+# =========================================================
+on property:sys.usb.config=mtp
+
+    write /config/usb_gadget/g1/UDC ""
+
+    rm /config/usb_gadget/g1/configs/b.1/f1 || true
+    rm /config/usb_gadget/g1/configs/b.1/f2 || true
+
+    symlink /config/usb_gadget/g1/functions/mtp.gs0 /config/usb_gadget/g1/configs/b.1/f1
+
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
+
+
+# =========================================================
+# 6. ADB + MTP MODE (TWRP DEFAULT)
+# =========================================================
+on property:sys.usb.config=mtp,adb
+
+    write /config/usb_gadget/g1/UDC ""
+
+    rm /config/usb_gadget/g1/configs/b.1/f1 || true
+    rm /config/usb_gadget/g1/configs/b.1/f2 || true
+
+    symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f1
+    symlink /config/usb_gadget/g1/functions/mtp.gs0 /config/usb_gadget/g1/configs/b.1/f2
+
+    setprop sys.usb.ffs.ready 1
+
+
+# =========================================================
+# 7. SIDeload MODE (ADB ONLY)
 # =========================================================
 on property:sys.usb.config=sideload
 
-    mkdir /config/usb_gadget/g1/functions/ffs.adb
+    write /config/usb_gadget/g1/UDC ""
 
-    mkdir /config/usb_gadget/g1/configs/b.1
-    mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409
-    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "sideload"
+    rm /config/usb_gadget/g1/configs/b.1/f1 || true
 
     symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f1
 
-    write /config/usb_gadget/g1/UDC musb-hdrc
-
-    start adbd
-    setprop sys.usb.state sideload
+    setprop sys.usb.ffs.ready 1
 
 
 # =========================================================
-# FASTBOOTD MODE (userspace fastboot)
+# 8. FASTBOOTD MODE (NO CONFIGFS, SEPARATE STACK)
 # =========================================================
 on property:sys.usb.config=fastboot
 
-    # change USB identity to fastboot
-    write /config/usb_gadget/g1/idVendor 0x18d1
-    write /config/usb_gadget/g1/idProduct 0x4EE0
-
-    mkdir /config/usb_gadget/g1/configs/b.1
-    mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409
-    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "fastboot"
-
-    write /config/usb_gadget/g1/UDC musb-hdrc
-
-    setprop sys.usb.state fastboot
-
-
-# =========================================================
-# USB OFF
-# =========================================================
-on property:sys.usb.config=none
-
     stop adbd
 
-    # unbind safely
     write /config/usb_gadget/g1/UDC ""
 
-    setprop sys.usb.state none
+    setprop sys.usb.ffs.ready 0
+
+    start fastbootd
+
+
+# =========================================================
+# 9. SAFE BIND (CRITICAL FIX FOR 5s DISCONNECT)
+# =========================================================
+on property:sys.usb.ffs.ready=1
+
+    # WAITED STATE → NOW SAFE TO BIND UDC
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
+
+    # START ADB ONLY AFTER FUNCTIONFS IS READY
+    start adbd
